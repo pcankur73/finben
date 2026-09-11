@@ -57,21 +57,41 @@ const namesBox=document.getElementById('names'),count=document.getElementById('c
 let names=[];
 
 // Small, subtle UI sound effect using the browser's built-in Web Audio API.
+// Browser-compatible sound effect
 let audioContext;
-function playSound(frequency=660, duration=0.08){
-  try{
-    audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator=audioContext.createOscillator();
-    const gain=audioContext.createGain();
-    oscillator.type='sine';
-    oscillator.frequency.value=frequency;
-    gain.gain.setValueAtTime(0.045,audioContext.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,audioContext.currentTime+duration);
+
+function playSound(frequency = 660, duration = 0.08) {
+  try {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext ||
+        window.webkitAudioContext)();
+    }
+
+    // Resume audio after browser autoplay restrictions
+    if (audioContext.state === "suspended") {
+      audioContext.resume();
+    }
+
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+
+    oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(0.045, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(
+      0.001,
+      audioContext.currentTime + duration
+    );
+
     oscillator.connect(gain);
     gain.connect(audioContext.destination);
+
     oscillator.start();
-    oscillator.stop(audioContext.currentTime+duration);
-  }catch(error){ /* Sound is optional; the page still works without it. */ }
+    oscillator.stop(audioContext.currentTime + duration);
+  } catch (error) {
+    console.error("Sound error:", error);
+  }
 }
 function render(){let q=search.value.trim().toLowerCase(),filtered=names.filter(n=>n.toLowerCase().includes(q));count.textContent=names.length;
 if(!filtered.length){namesBox.innerHTML='<li class="empty" style="grid-column:1/-1;list-style:none">🔎<br><b>No matching names</b></li>';return;}
