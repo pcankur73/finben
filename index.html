@@ -55,12 +55,33 @@ footer{text-align:center;color:#d8b4fe;font-size:12px;margin:20px}
 <script>
 const namesBox=document.getElementById('names'),count=document.getElementById('count'),search=document.getElementById('search'),status=document.getElementById('status');
 let names=[];
+
+// Small, subtle UI sound effect using the browser's built-in Web Audio API.
+let audioContext;
+function playSound(frequency=660, duration=0.08){
+  try{
+    audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator=audioContext.createOscillator();
+    const gain=audioContext.createGain();
+    oscillator.type='sine';
+    oscillator.frequency.value=frequency;
+    gain.gain.setValueAtTime(0.045,audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,audioContext.currentTime+duration);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime+duration);
+  }catch(error){ /* Sound is optional; the page still works without it. */ }
+}
 function render(){let q=search.value.trim().toLowerCase(),filtered=names.filter(n=>n.toLowerCase().includes(q));count.textContent=names.length;
 if(!filtered.length){namesBox.innerHTML='<li class="empty" style="grid-column:1/-1;list-style:none">🔎<br><b>No matching names</b></li>';return;}
 namesBox.innerHTML=filtered.map(n=>`<li class="name"><b>${escapeHtml(n)}</b><small>✦ Prosperity name</small></li>`).join('');}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 async function loadNames(){try{const response=await fetch('names.txt',{cache:'no-store'});if(!response.ok)throw new Error('HTTP '+response.status);const text=await response.text();names=text.replace(/^\uFEFF/,'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);status.textContent='names.txt • '+names.length+' names loaded';render();}catch(error){status.textContent='Could not load names.txt. Make sure it is beside this HTML file and served from a web server.';namesBox.innerHTML='<li class="empty" style="grid-column:1/-1;list-style:none">⚠️<br><b>names.txt could not be loaded</b><br>Place names.txt in the same folder and open this page through a local web server.</li>';}}
-search.addEventListener('input',render);document.getElementById('all').onclick=()=>{search.value='';render();};document.getElementById('reset').onclick=()=>{search.value='';loadNames();};
+search.addEventListener('input',render);
+document.getElementById('all').onclick=()=>{playSound(720);search.value='';render();};
+document.getElementById('reset').onclick=()=>{playSound(520);search.value='';loadNames();};
+namesBox.addEventListener('click',event=>{if(event.target.closest('.name'))playSound(660);});
 loadNames();
 </script>
 </body>
